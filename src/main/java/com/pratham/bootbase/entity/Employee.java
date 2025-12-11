@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @Check(name = "age_constraint",constraints = "age>=18")
-public class Employee {
+public class Employee extends AuditingEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
