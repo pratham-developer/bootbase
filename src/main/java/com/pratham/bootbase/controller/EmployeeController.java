@@ -31,13 +31,13 @@ public class EmployeeController {
     //@valid works without @validated
     //@valid is used to ensure validation on a request body dto object
     //to ensure bean validation on path variables or query parameters we have to add @validated on the controller
-    @PostMapping("/")
+    @PostMapping
     ResponseEntity<ApiResponse<GetEmployeeDTO>> add(@Valid @RequestBody AddEmployeeDTO addEmployeeDTO){
         GetEmployeeDTO employeeDTO = employeeService.add(addEmployeeDTO);
         return ResponseEntity.ok(new ApiResponse<>("employee added successfully",employeeDTO));
     }
 
-    @GetMapping("/")
+    @GetMapping
     ResponseEntity<ApiResponse<PagedModel<GetEmployeeDTO>>> getAll(@Min(value = 0,message = "page num should be minimum 0") @RequestParam(defaultValue = "0") Integer num, @Min(1) @RequestParam(defaultValue = "10") Integer size){
         PagedModel<GetEmployeeDTO> employeeDTOPagedModel = employeeService.getAll(num,size);
         ApiResponse<PagedModel<GetEmployeeDTO>> apiResponse = new ApiResponse<>("employees retrieved successfully",employeeDTOPagedModel);

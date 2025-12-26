@@ -1,14 +1,27 @@
 package com.pratham.bootbase.auth;
 
+import com.pratham.bootbase.entity.AppUser;
 import org.springframework.data.domain.AuditorAware;
+import org.springframework.lang.NonNull;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
 
 public class AuditorAwareImpl implements AuditorAware<String> {
 
     @Override
+    @NonNull
     public Optional<String> getCurrentAuditor() {
-        //TODO: fetch current user name from spring security
-        return Optional.of("Ekansh");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if(authentication==null || !authentication.isAuthenticated()){
+            return Optional.empty();
+        }
+
+        Object principal = authentication.getPrincipal();
+        if(principal instanceof AppUser){
+            return Optional.of(((AppUser) principal).getName());
+        }
+        return Optional.empty();
     }
 }

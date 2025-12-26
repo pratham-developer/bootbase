@@ -3,11 +3,13 @@ package com.pratham.bootbase.advice;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.pratham.bootbase.dto.ApiResponse;
 import com.pratham.bootbase.exception.ApiException;
+import io.jsonwebtoken.JwtException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -24,6 +26,20 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiResponse<?>> handleApiException(ApiException e){
         ApiResponse<?> apiResponse = new ApiResponse<>(e.getMessage(),null);
         return ResponseEntity.status(e.getStatus()).body(apiResponse);
+    }
+
+    //handle exceptions due to Authentication
+    @ExceptionHandler(AuthenticationException.class)
+    ResponseEntity<ApiResponse<?>> handleAuthException(AuthenticationException e){
+        ApiResponse<?> apiResponse = new ApiResponse<>(e.getLocalizedMessage(),null);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+    }
+
+    //handle exceptions due to Jwt
+    @ExceptionHandler(JwtException.class)
+    ResponseEntity<ApiResponse<?>> handleJwtException(JwtException e){
+        ApiResponse<?> apiResponse = new ApiResponse<>(e.getLocalizedMessage(),null);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
     }
 
 
