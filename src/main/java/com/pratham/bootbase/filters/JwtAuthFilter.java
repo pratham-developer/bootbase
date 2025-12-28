@@ -39,13 +39,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 return;
             }
 
-            //get the auth token from the header
-            String authToken = authHeader.substring(7);
+            //get the access token from the header
+            String accessToken = authHeader.substring(7);
 
             if(SecurityContextHolder.getContext().getAuthentication() == null){
 
                 //get the userId from the token
-                Long userId = jwtService.getUserIdFromToken(authToken);
+                Long userId = jwtService.getUserIdFromToken(accessToken);
 
                 //get user with this userId
                 AppUser appUser = appUserService.loadUserById(userId);
