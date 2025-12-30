@@ -10,6 +10,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class AppUserService implements UserDetailsService {
@@ -26,5 +28,17 @@ public class AppUserService implements UserDetailsService {
         return appUserRepository.findById(userId).orElseThrow(
                 ()->new BadCredentialsException("User not found with id = "+userId)
         );
+    }
+
+    public AppUser findOrCreateByEmail(String email, String name){
+        Optional<AppUser> appUser = appUserRepository.findByEmail(email);
+        if(appUser.isPresent()) return appUser.get();
+
+        AppUser toSave = AppUser.builder()
+                .email(email)
+                .name(name)
+                .build();
+
+        return appUserRepository.save(toSave);
     }
 }

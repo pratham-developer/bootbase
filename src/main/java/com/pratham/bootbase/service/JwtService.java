@@ -14,15 +14,36 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret}")
-    private String secret;
+    @Value("${jwt.access.secret}")
+    private String accessSecret;
 
-    private SecretKey getSecretKey(){
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    @Value("${jwt.refresh.secret}")
+    private String refreshSecret;
+
+    @Value("${jwt.access.expiry}")
+    private Long accessExpiry;
+
+    @Value("${jwt.refresh.expiry}")
+    private Long refreshExpiry;
+
+    private SecretKey getAccessSecretKey(){
+        return Keys.hmacShaKeyFor(accessSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public Long getUserIdFromToken(String token){
-        Claims claims = Jwts.parser().verifyWith(getSecretKey()).build()
+    private SecretKey getRefreshSecretKey(){
+        return Keys.hmacShaKeyFor(refreshSecret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public Long getUserIdFromAccessToken(String token){
+        Claims claims = Jwts.parser().verifyWith(getAccessSecretKey()).build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        return Long.valueOf(claims.getSubject());
+    }
+
+    public Long getUserIdFromRefreshToken(String token){
+        Claims claims = Jwts.parser().verifyWith(getRefreshSecretKey()).build()
                 .parseSignedClaims(token)
                 .getPayload();
 
@@ -35,8 +56,8 @@ public class JwtService {
                 .claim("name",authUser.getName())
                 .claim("email",authUser.getEmail())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000*60*10))
-                .signWith(getSecretKey())
+                .expiration(new Date(System.currentTimeMillis() + accessExpiry))
+                .signWith(getAccessSecretKey())
                 .compact();
     }
 
@@ -44,8 +65,8 @@ public class JwtService {
         return Jwts.builder()
                 .subject(String.valueOf(authUser.getId()))
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000L *60*60*24*30*6))
-                .signWith(getSecretKey())
+                .expiration(new Date(System.currentTimeMillis() + refreshExpiry))
+                .signWith(getRefreshSecretKey())
                 .compact();
     }
 }

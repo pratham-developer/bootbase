@@ -17,7 +17,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
-import java.util.Collections;
 
 @Component
 @RequiredArgsConstructor
@@ -44,15 +43,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             if(SecurityContextHolder.getContext().getAuthentication() == null){
 
-                //get the userId from the token
-                Long userId = jwtService.getUserIdFromToken(accessToken);
+                //get the userId from access token
+                Long userId = jwtService.getUserIdFromAccessToken(accessToken);
 
                 //get user with this userId
                 AppUser appUser = appUserService.loadUserById(userId);
 
                 //create authentication object with this user
                 UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
-                        new UsernamePasswordAuthenticationToken(appUser,null, Collections.emptyList());
+                        new UsernamePasswordAuthenticationToken(appUser,null, appUser.getAuthorities());
 
                 //attach details
                 usernamePasswordAuthenticationToken.setDetails(

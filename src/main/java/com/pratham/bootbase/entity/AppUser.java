@@ -2,10 +2,7 @@ package com.pratham.bootbase.entity;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -17,6 +14,7 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class AppUser implements UserDetails {
 
     @Id
@@ -29,8 +27,8 @@ public class AppUser implements UserDetails {
     @Column(unique = true,nullable = false)
     private String email;
 
-    @Column(nullable = false)
-    private String password;
+    @Column(nullable = true)
+    private String password; //password can be null for oauth user
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

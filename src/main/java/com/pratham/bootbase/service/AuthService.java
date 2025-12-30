@@ -60,7 +60,7 @@ public class AuthService {
 
     public LoginResponseDto refresh(String refreshToken) {
         //get the userId from refresh token
-        Long userId = jwtService.getUserIdFromToken(refreshToken);
+        Long userId = jwtService.getUserIdFromRefreshToken(refreshToken);
 
         //get the authenticated user
         AppUser appUser = appUserService.loadUserById(userId);

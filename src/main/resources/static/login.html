@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            display: flex;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+        }
+        .card {
+            background: #fff;
+            padding: 24px;
+            width: 320px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 12px;
+        }
+        button {
+            cursor: pointer;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .divider {
+            text-align: center;
+            margin: 16px 0;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Login</h2>
+
+    <input id="email" type="email" placeholder="Email" />
+    <input id="password" type="password" placeholder="Password" />
+
+    <button onclick="login()">Login</button>
+
+    <div class="divider">OR</div>
+
+    <button onclick="googleLogin()">Login with Google</button>
+
+    <div id="error" class="error"></div>
+</div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error")) {
+        document.getElementById("error").innerText = "OAuth login failed";
+    }
+
+    async function login() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        try {
+            const res = await fetch("/api/v1/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                credentials: "include", // IMPORTANT for refresh cookie
+                body: JSON.stringify({ email, password })
+            });
+
+            if (!res.ok) {
+                throw new Error("Invalid credentials");
+            }
+
+            const data = await res.json();
+
+            // store access token in memory/localStorage
+            localStorage.setItem("accessToken", data.accessToken);
+
+            window.location.href = "/api/v1/home.html";
+        } catch (e) {
+            document.getElementById("error").innerText = e.message;
+        }
+    }
+
+    function googleLogin() {
+        window.location.href = "/api/v1/oauth2/authorization/google";
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef2f5;
+            padding: 40px;
+        }
+        .box {
+            background: #fff;
+            padding: 24px;
+            border-radius: 8px;
+            max-width: 600px;
+        }
+        button {
+            padding: 10px 14px;
+            margin-top: 12px;
+            cursor: pointer;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Home</h2>
+
+    <button onclick="callProtectedApi()">Call Protected API</button>
+    <pre id="output"></pre>
+</div>
+
+<script>
+    // Handle OAuth redirect token
+    const params = new URLSearchParams(window.location.search);
+    const tokenFromUrl = params.get("token");
+
+    if (tokenFromUrl) {
+        localStorage.setItem("accessToken", tokenFromUrl);
+        window.history.replaceState({}, document.title, "/home.html");
+    }
+
+    const accessToken = localStorage.getItem("accessToken");
+
+    if (!accessToken) {
+        window.location.href = "/api/v1/login.html";
+    }
+
+    async function callProtectedApi() {
+        try {
+            const res = await fetch("/api/v1/employees", {
+                method: "GET",
+                headers: {
+                    "Authorization": "Bearer " + accessToken
+                },
+                credentials: "include" // allows refresh cookie to be sent
+            });
+
+            if (res.status === 401) {
+                throw new Error("Unauthorized – token expired");
+            }
+
+            const data = await res.json();
+            document.getElementById("output").innerText =
+                JSON.stringify(data, null, 2);
+        } catch (e) {
+            document.getElementById("output").innerText = e.message;
+        }
+    }
+</script>
+
+</body>
+</html>

@@ -35,18 +35,19 @@ public class AuthController {
         Cookie cookie = new Cookie("refreshToken",loginResponseDto.getRefreshToken());
         cookie.setHttpOnly(true);
         cookie.setSecure(deployEnv.equals("production")); //secure only in prod
-        cookie.setPath("/auth/refresh"); //strictly restrict to the refresh endpoint
+        cookie.setPath("/api/v1/auth/refresh"); //strictly restrict to the refresh endpoint
         cookie.setAttribute("SameSite", "Strict"); //prevent csrf
 
+        response.addCookie(cookie);
         return ResponseEntity.ok(loginResponseDto);
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<LoginResponseDto> refresh(
-            @CookieValue(name = "refreshToken", required = false) String cookieToken,
-            @RequestHeader(name = "X-Refresh-Token", required = false) String headerToken
-    ){
-        String refreshToken = cookieToken != null ? cookieToken : headerToken;
+            @CookieValue(name = "refreshToken", required = false) String refreshCookie,
+            @RequestHeader(name = "X-Refresh-Token", required = false) String refreshHeader){
+
+        String refreshToken = refreshCookie != null ? refreshCookie : refreshHeader;
         return ResponseEntity.ok(authService.refresh(refreshToken));
     }
 
