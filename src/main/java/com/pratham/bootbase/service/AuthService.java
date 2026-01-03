@@ -12,7 +12,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +25,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final AppUserService appUserService;
+    private final SessionService sessionService;
 
     public AppUserDto signup(SignupDto signupDto){
         if(appUserRepository.existsByEmail(signupDto.getEmail())){
@@ -53,6 +53,9 @@ public class AuthService {
         String accessToken = jwtService.generateAccessToken(authUser);
         String refreshToken = jwtService.generateRefreshToken(authUser);
 
+        //create a session for this user with this refresh token
+        sessionService.createSession(authUser,refreshToken);
+
         //return the tokens
         return LoginResponseDto.builder()
                 .accessToken(accessToken).refreshToken(refreshToken).build();
@@ -61,6 +64,9 @@ public class AuthService {
     public LoginResponseDto refresh(String refreshToken) {
         //get the userId from refresh token
         Long userId = jwtService.getUserIdFromRefreshToken(refreshToken);
+
+        //validate whether a session exists for this userId and refresh token
+        sessionService.validateAndUpdateSession(userId, refreshToken);
 
         //get the authenticated user
         AppUser appUser = appUserService.loadUserById(userId);
