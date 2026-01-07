@@ -6,14 +6,15 @@ import com.pratham.bootbase.handlers.Oauth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.HttpStatusAccessDeniedHandler;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+
+import static com.pratham.bootbase.entity.enums.Role.MANAGER;
 
 @Configuration
 @EnableWebSecurity
@@ -25,23 +26,28 @@ public class SecurityConfig {
     private final Oauth2FailureHandler oauth2FailureHandler;
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity, HandlerExceptionResolver handlerExceptionResolver) throws Exception {
         httpSecurity
                 .csrf(csrfConfig -> csrfConfig.disable())
                 .sessionManagement(sessionConfig -> sessionConfig
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/auth/**","/login.html","/home.html").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/employees/**").hasRole(MANAGER.name())
+                        .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> {
+                    ex.authenticationEntryPoint((request, response, authException) ->
+                            handlerExceptionResolver.resolveException(request,response,null,authException)
+                    );
+                    ex.accessDeniedHandler((request, response, accessDeniedException) ->
+                            handlerExceptionResolver.resolveException(request,response,null,accessDeniedException)
+                    );
+                })
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2Config -> oauth2Config
                         .successHandler(oauth2SuccessHandler)
                         .failureHandler(oauth2FailureHandler)
-                )
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-                        .accessDeniedHandler(new HttpStatusAccessDeniedHandler(HttpStatus.FORBIDDEN))
-                )
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**","/login.html","/home.html").permitAll()
-                        .anyRequest().authenticated()
                 );
 
         return httpSecurity.build();

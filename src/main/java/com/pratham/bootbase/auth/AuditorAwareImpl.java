@@ -1,5 +1,6 @@
 package com.pratham.bootbase.auth;
 
+import com.pratham.bootbase.dto.AuthenticatedUser;
 import com.pratham.bootbase.entity.AppUser;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.lang.NonNull;
@@ -20,7 +21,10 @@ public class AuditorAwareImpl implements AuditorAware<String> {
 
         Object principal = authentication.getPrincipal();
         if(principal instanceof AppUser){
-            return Optional.of(((AppUser) principal).getName());
+            return Optional.of(((AppUser) principal).getUsername());
+        }
+        if(principal instanceof AuthenticatedUser){
+            return Optional.of(((AuthenticatedUser) principal).getUsername());
         }
         return Optional.empty();
     }

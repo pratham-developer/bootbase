@@ -1,6 +1,9 @@
 package com.pratham.bootbase.filters;
 
+import com.pratham.bootbase.dto.AccessTokenClaims;
+import com.pratham.bootbase.dto.AuthenticatedUser;
 import com.pratham.bootbase.entity.AppUser;
+import com.pratham.bootbase.entity.enums.Role;
 import com.pratham.bootbase.service.AppUserService;
 import com.pratham.bootbase.service.JwtService;
 import jakarta.servlet.FilterChain;
@@ -10,6 +13,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -17,6 +22,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -28,45 +36,44 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
-        try {
-            //get the authorization header
-            String authHeader = request.getHeader("Authorization");
-            //if auth header is null or doesn't start with Bearer
-            //then pass the request to the next filter (for unauthenticated endpoints)
-            if(authHeader==null || !authHeader.startsWith("Bearer ")){
-                filterChain.doFilter(request,response);
-                return;
-            }
+        String authHeader = request.getHeader("Authorization");
 
-            //get the access token from the header
+        if(authHeader==null || !authHeader.startsWith("Bearer ")){
+            filterChain.doFilter(request,response);
+            return;
+        }
+
+        try {
             String accessToken = authHeader.substring(7);
 
             if(SecurityContextHolder.getContext().getAuthentication() == null){
 
-                //get the userId from access token
-                Long userId = jwtService.getUserIdFromAccessToken(accessToken);
+                AccessTokenClaims claims = jwtService.getClaimsFromAccessToken(accessToken);
+                Set<Role> roles = claims.getRoles().stream()
+                        .map(role -> Role.valueOf(role))
+                        .collect(Collectors.toSet());
 
-                //get user with this userId
-                AppUser appUser = appUserService.loadUserById(userId);
+                AuthenticatedUser authenticatedUser = AuthenticatedUser
+                        .builder().id(claims.getId()).name(claims.getName())
+                        .email(claims.getEmail()).roles(roles).build();
 
-                //create authentication object with this user
+
                 UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
-                        new UsernamePasswordAuthenticationToken(appUser,null, appUser.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(authenticatedUser, null, authenticatedUser.getAuthorities());
 
-                //attach details
                 usernamePasswordAuthenticationToken.setDetails(
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
 
-                //set the authentication object in the security context
                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
             }
-
-            //move to the next filter
-            filterChain.doFilter(request,response);
         } catch (Exception e) {
+            SecurityContextHolder.clearContext();
             handlerExceptionResolver.resolveException(request,response,null,e);
+            return;
         }
+
+        filterChain.doFilter(request,response);
     }
 
     @Override

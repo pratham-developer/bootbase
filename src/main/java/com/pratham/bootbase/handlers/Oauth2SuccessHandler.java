@@ -1,14 +1,13 @@
 package com.pratham.bootbase.handlers;
 
-import com.pratham.bootbase.dto.ApiResponse;
 import com.pratham.bootbase.entity.AppUser;
 import com.pratham.bootbase.service.AppUserService;
 import com.pratham.bootbase.service.JwtService;
+import com.pratham.bootbase.service.SessionService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -25,6 +24,7 @@ public class Oauth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     private final AppUserService appUserService;
     private final JwtService jwtService;
+    private final SessionService sessionService;
 
     @Value("${deploy.env}")
     private String deployEnv;
@@ -36,7 +36,7 @@ public class Oauth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         DefaultOAuth2User oAuth2User = (DefaultOAuth2User) oAuth2AuthenticationToken.getPrincipal();
 
         String email = oAuth2User.getAttribute("email");
-        String name = oAuth2User.getName();
+        String name = oAuth2User.getAttribute("name");
 
         //get the user with this email or create
         AppUser appUser = appUserService.findOrCreateByEmail(email,name);
@@ -44,6 +44,9 @@ public class Oauth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         //generate access and refresh token for this user
         String accessToken = jwtService.generateAccessToken(appUser);
         String refreshToken = jwtService.generateRefreshToken(appUser);
+
+        //create a session for this user with this refresh token
+        sessionService.createSession(appUser,refreshToken);
 
         //send refresh token in cookie
         Cookie cookie = new Cookie("refreshToken",refreshToken);

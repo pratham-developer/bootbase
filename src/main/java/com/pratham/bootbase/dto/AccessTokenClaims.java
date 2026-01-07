@@ -1,18 +1,21 @@
-package com.pratham.bootbase.dto.Request;
+package com.pratham.bootbase.dto;
 
 import com.pratham.bootbase.entity.enums.Role;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.Set;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SignupDto {
+@Builder
+public class AccessTokenClaims {
+    private Long id;
     private String name;
     private String email;
-    private String password;
-    private Set<Role> roles;
+    private List<String> roles;
 }

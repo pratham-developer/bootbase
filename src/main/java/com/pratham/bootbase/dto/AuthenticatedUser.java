@@ -1,45 +1,40 @@
-package com.pratham.bootbase.entity;
-
+package com.pratham.bootbase.dto;
 
 import com.pratham.bootbase.entity.enums.Role;
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-@Entity
-@Getter
-@Setter
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class AppUser implements UserDetails {
+public class AuthenticatedUser implements UserDetails {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
     private String name;
-
-    @Column(unique = true,nullable = false)
     private String email;
-
-    private String password; //password can be null for oauth user
-
-    @Enumerated(value = EnumType.STRING)
-    @ElementCollection(fetch = FetchType.EAGER)
     private Set<Role> roles;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_"+role.name()))
-                .toList();
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    public String getPassword() {
+        return null;
     }
 
     @Override

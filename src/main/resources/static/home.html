@@ -38,7 +38,7 @@
 <script>
     // Handle OAuth redirect token
     const params = new URLSearchParams(window.location.search);
-    const tokenFromUrl = params.get("token");
+    const tokenFromUrl = params.get("accessToken");
 
     if (tokenFromUrl) {
         localStorage.setItem("accessToken", tokenFromUrl);
