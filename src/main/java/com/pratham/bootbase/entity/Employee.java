@@ -1,15 +1,14 @@
 package com.pratham.bootbase.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.Check;
 
 import java.time.LocalDate;
 
 @Entity
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Check(name = "age_constraint",constraints = "age>=18")
@@ -33,4 +32,8 @@ public class Employee extends AuditingEntity{
 
     @Column(nullable = false)
     private Boolean isActive;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
+    private AppUser owner;
 }

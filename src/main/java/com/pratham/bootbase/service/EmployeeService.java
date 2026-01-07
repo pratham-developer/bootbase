@@ -6,10 +6,13 @@ import com.pratham.bootbase.dto.Request.AddEmployeeDTO;
 import com.pratham.bootbase.dto.Request.PatchEmployeeDTO;
 import com.pratham.bootbase.dto.Response.DeleteDTO;
 import com.pratham.bootbase.dto.Response.GetEmployeeDTO;
+import com.pratham.bootbase.entity.AppUser;
 import com.pratham.bootbase.entity.Employee;
 import com.pratham.bootbase.exception.BadRequestException;
 import com.pratham.bootbase.exception.ResourceNotFoundException;
 import com.pratham.bootbase.repository.EmployeeRepository;
+import com.pratham.bootbase.utils.SecurityUtil;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -26,6 +29,7 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final ModelMapper mapper;
     private final ObjectMapper objectMapper;
+    private final EntityManager entityManager;
 
     public GetEmployeeDTO getById(Long id){
         Employee employee = employeeRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Employee Not Found"));
@@ -34,14 +38,18 @@ public class EmployeeService {
 
     @Transactional
     public GetEmployeeDTO add(AddEmployeeDTO addEmployeeDTO){
+        Long currentUserId = SecurityUtil.getCurrentUserId();
         if(employeeRepository.existsByEmail(addEmployeeDTO.getEmail())){
             throw new BadRequestException("email already exists");
         }
 
         Employee toSave = mapper.map(addEmployeeDTO, Employee.class);
+        toSave.setOwner(entityManager.getReference(AppUser.class,currentUserId));
         Employee saved = employeeRepository.save(toSave);
         return mapper.map(saved, GetEmployeeDTO.class);
     }
+
+
 
     public PagedModel<GetEmployeeDTO> getAll(Integer num, Integer size){
         Pageable pageable = PageRequest.of(num,size);

@@ -11,8 +11,11 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
 
 
 @RestController
@@ -22,6 +25,8 @@ import org.springframework.web.bind.annotation.*;
 public class EmployeeController {
     private final EmployeeService employeeService;
 
+    //allow to all authenticated user
+    @Secured("READ_EMPLOYEE")
     @GetMapping("/{id}")
     ResponseEntity<ApiResponse<GetEmployeeDTO>> getById(@Min(1) @PathVariable Long id){
         GetEmployeeDTO employeeDTO = employeeService.getById(id);
@@ -31,12 +36,14 @@ public class EmployeeController {
     //@valid works without @validated
     //@valid is used to ensure validation on a request body dto object
     //to ensure bean validation on path variables or query parameters we have to add @validated on the controller
+    @Secured("MODIFY_EMPLOYEE")
     @PostMapping
     ResponseEntity<ApiResponse<GetEmployeeDTO>> add(@Valid @RequestBody AddEmployeeDTO addEmployeeDTO){
         GetEmployeeDTO employeeDTO = employeeService.add(addEmployeeDTO);
         return ResponseEntity.ok(new ApiResponse<>("employee added successfully",employeeDTO));
     }
 
+    @PreAuthorize("hasAnyRole('ROLE_MANAGER','ROLE_ADMIN')")
     @GetMapping
     ResponseEntity<ApiResponse<PagedModel<GetEmployeeDTO>>> getAll(@Min(value = 0,message = "page num should be minimum 0") @RequestParam(defaultValue = "0") Integer num, @Min(1) @RequestParam(defaultValue = "10") Integer size){
         PagedModel<GetEmployeeDTO> employeeDTOPagedModel = employeeService.getAll(num,size);
@@ -44,18 +51,21 @@ public class EmployeeController {
         return ResponseEntity.ok(apiResponse);
     }
 
+    @PreAuthorize("hasAuthority('MODIFY_EMPLOYEE') and @permissionService.isOwnerOfEmployee(#id)")
     @PutMapping("/{id}")
     ResponseEntity<ApiResponse<GetEmployeeDTO>> put(@Min(1) @PathVariable Long id, @Valid @RequestBody AddEmployeeDTO addEmployeeDTO){
         GetEmployeeDTO employeeDTO = employeeService.put(id,addEmployeeDTO);
         return ResponseEntity.ok(new ApiResponse<>("employee updated successfully",employeeDTO));
     }
 
+    @PreAuthorize("hasAuthority('MODIFY_EMPLOYEE') and @permissionService.isOwnerOfEmployee(#id)")
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<GetEmployeeDTO>> patch(@PathVariable Long id, @Valid @RequestBody PatchEmployeeDTO patchEmployeeDTO){
         GetEmployeeDTO employeeDTO = employeeService.patch(id,patchEmployeeDTO);
         return ResponseEntity.ok(new ApiResponse<>("employee updated successfully",employeeDTO));
     }
 
+    @Secured("ROLE_ADMIN")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<DeleteDTO>> delete(@PathVariable Long id){
         DeleteDTO dto = employeeService.delete(id);
