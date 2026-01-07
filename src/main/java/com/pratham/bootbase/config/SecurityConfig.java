@@ -14,7 +14,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
-import static com.pratham.bootbase.entity.enums.Role.MANAGER;
+import static com.pratham.bootbase.entity.enums.Permission.*;
 
 @Configuration
 @EnableWebSecurity
@@ -33,7 +33,12 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**","/login.html","/home.html").permitAll()
-                        .requestMatchers(HttpMethod.POST,"/employees/**").hasRole(MANAGER.name())
+                        .requestMatchers(HttpMethod.GET,"/employees/**").hasAuthority(READ_EMPLOYEE.name())
+                        .requestMatchers(HttpMethod.POST,"/employees/**").hasAuthority(MODIFY_EMPLOYEE.name())
+                        .requestMatchers(HttpMethod.PATCH,"/employees/**").hasAuthority(MODIFY_EMPLOYEE.name())
+                        .requestMatchers(HttpMethod.PUT,"/employees/**").hasAuthority(MODIFY_EMPLOYEE.name())
+                        .requestMatchers(HttpMethod.DELETE,"/employees/**").hasAuthority(DELETE_EMPLOYEE.name())
+
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> {

@@ -1,18 +1,16 @@
 package com.pratham.bootbase.dto;
 
 import com.pratham.bootbase.entity.enums.Role;
+import com.pratham.bootbase.utils.PermissionMapping;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Data
 @AllArgsConstructor
@@ -27,9 +25,7 @@ public class AuthenticatedUser implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_"+role.name()))
-                .collect(Collectors.toSet());
+        return PermissionMapping.getAuthorities(roles);
     }
 
     @Override
