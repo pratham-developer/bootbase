@@ -2,10 +2,10 @@ package com.pratham.bootbase.filters;
 
 import com.pratham.bootbase.dto.AccessTokenClaims;
 import com.pratham.bootbase.dto.AuthenticatedUser;
-import com.pratham.bootbase.entity.AppUser;
 import com.pratham.bootbase.entity.enums.Role;
-import com.pratham.bootbase.service.AppUserService;
+import com.pratham.bootbase.exception.SessionNotFoundException;
 import com.pratham.bootbase.service.JwtService;
+import com.pratham.bootbase.service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,8 +13,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -22,7 +20,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,8 +28,8 @@ import java.util.stream.Collectors;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final AppUserService appUserService;
     private final HandlerExceptionResolver handlerExceptionResolver;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
@@ -49,6 +46,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             if(SecurityContextHolder.getContext().getAuthentication() == null){
 
                 AccessTokenClaims claims = jwtService.getClaimsFromAccessToken(accessToken);
+
+                //check if token is blacklisted or not
+                if(tokenBlacklistService.isAccessTokenBlacklisted(claims.getJti())){
+                    throw new SessionNotFoundException("Session Expired");
+                }
+
                 Set<Role> roles = claims.getRoles().stream()
                         .map(role -> Role.valueOf(role))
                         .collect(Collectors.toSet());

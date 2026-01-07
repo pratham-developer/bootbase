@@ -10,10 +10,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,10 +42,12 @@ public class JwtService {
                 .getPayload();
 
         return AccessTokenClaims.builder()
+                .jti(claims.getId())
                 .id(Long.valueOf(claims.getSubject()))
                 .name(claims.get("name",String.class))
                 .email(claims.get("email",String.class))
                 .roles(claims.get("roles", List.class))
+                .expirationTime(claims.getExpiration().getTime())
                 .build();
     }
 
@@ -60,9 +59,12 @@ public class JwtService {
         return Long.valueOf(claims.getSubject());
     }
 
+
     public String generateAccessToken(AppUser authUser) {
+        UUID jti = UUID.randomUUID();
         return Jwts.builder()
                 .subject(String.valueOf(authUser.getId()))
+                .id(jti.toString())
                 .claim("name",authUser.getName())
                 .claim("email",authUser.getEmail())
                 .claim("roles",authUser.getRoles().stream().map(role -> role.name()).collect(Collectors.toList()))

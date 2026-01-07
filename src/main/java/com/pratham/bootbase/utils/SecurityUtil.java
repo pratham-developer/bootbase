@@ -15,6 +15,6 @@ public class SecurityUtil {
         if(principal instanceof AuthenticatedUser){
             return ((AuthenticatedUser) principal).getId();
         }
-        throw new IllegalStateException("Unknown prinicipal type");
+        throw new IllegalStateException("Unknown principal type");
     }
 }

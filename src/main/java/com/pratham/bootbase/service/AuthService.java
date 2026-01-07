@@ -1,21 +1,17 @@
 package com.pratham.bootbase.service;
 
+import com.pratham.bootbase.dto.AccessTokenClaims;
 import com.pratham.bootbase.dto.Request.LoginDto;
 import com.pratham.bootbase.dto.Request.SignupDto;
 import com.pratham.bootbase.dto.Response.AppUserDto;
 import com.pratham.bootbase.dto.Response.LoginResponseDto;
 import com.pratham.bootbase.entity.AppUser;
-import com.pratham.bootbase.entity.Session;
 import com.pratham.bootbase.exception.BadRequestException;
-import com.pratham.bootbase.exception.SessionNotFoundException;
 import com.pratham.bootbase.repository.AppUserRepository;
 import com.pratham.bootbase.repository.SessionRepository;
-import com.pratham.bootbase.utils.SecurityUtil;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -35,6 +31,7 @@ public class AuthService {
     private final AppUserService appUserService;
     private final SessionService sessionService;
     private final SessionRepository sessionRepository;
+    private final TokenBlacklistService tokenBlacklistService;
 
 
     public AppUserDto signup(SignupDto signupDto){
@@ -93,8 +90,25 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(String refreshToken){
-        Long userId = jwtService.getUserIdFromRefreshToken(refreshToken);
-        sessionRepository.deleteByAppUserIdAndRefreshToken(userId,refreshToken);
+    public void logout(String refreshToken, String accessToken){
+        if(refreshToken == null || accessToken == null){
+            throw new JwtException("Unknown User");
+        }
+
+        AccessTokenClaims claims = jwtService.getClaimsFromAccessToken(accessToken);
+        Long userIdFromRefreshToken = jwtService.getUserIdFromRefreshToken(refreshToken);
+
+        if(!userIdFromRefreshToken.equals(claims.getId())){
+            throw new JwtException("Invalid User");
+        }
+
+        String jti = claims.getJti();
+        Long expirationTime = claims.getExpirationTime();
+
+        sessionRepository.deleteByAppUserIdAndRefreshToken(userIdFromRefreshToken,refreshToken);
+
+        if(jti != null && expirationTime != null){
+            tokenBlacklistService.blacklistAccessToken(jti, expirationTime);
+        }
     }
 }

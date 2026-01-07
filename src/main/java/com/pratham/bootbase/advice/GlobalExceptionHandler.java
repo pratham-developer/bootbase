@@ -118,7 +118,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiResponse<?>> handleAllExceptions(Exception e){
-        ApiResponse<?> apiResponse = new ApiResponse<>(e.getMessage(),null);
+        ApiResponse<?> apiResponse = new ApiResponse<>("Internal server error",null);
         return ResponseEntity.internalServerError().body(apiResponse);
     }
 }
