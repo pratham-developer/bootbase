@@ -9,6 +9,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,7 +36,7 @@ public class AuthController {
         Cookie cookie = new Cookie("refreshToken",loginResponseDto.getRefreshToken());
         cookie.setHttpOnly(true);
         cookie.setSecure(deployEnv.equals("production")); //secure only in prod
-        cookie.setPath("/api/v1/auth/refresh"); //strictly restrict to the refresh endpoint
+        cookie.setPath("/api/v1/auth"); //strictly restrict to the refresh endpoint
         cookie.setAttribute("SameSite", "Strict"); //prevent csrf
 
         response.addCookie(cookie);
@@ -49,6 +50,32 @@ public class AuthController {
 
         String refreshToken = refreshCookie != null ? refreshCookie : refreshHeader;
         return ResponseEntity.ok(authService.refresh(refreshToken));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @CookieValue(name = "refreshToken", required = false) String refreshCookie,
+            @RequestHeader(name = "X-Refresh-Token", required = false) String refreshHeader
+    ){
+        String refreshToken = refreshCookie != null ? refreshCookie : refreshHeader;
+        if(refreshToken != null){
+            authService.logout(refreshToken);
+        }
+        //delete refresh cookie
+        ResponseCookie deleteCookie = deleteRefreshCookie();
+        return ResponseEntity.noContent()
+                .header("Set-Cookie",deleteCookie.toString())
+                .build();
+    }
+
+    private ResponseCookie deleteRefreshCookie(){
+        return ResponseCookie.from("refreshToken","")
+                .httpOnly(true)
+                .secure(deployEnv.equals("production"))
+                .sameSite("Strict")
+                .path("/api/v1/auth")
+                .maxAge(0)
+                .build();
     }
 
 }

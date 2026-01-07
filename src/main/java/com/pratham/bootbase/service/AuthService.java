@@ -5,15 +5,23 @@ import com.pratham.bootbase.dto.Request.SignupDto;
 import com.pratham.bootbase.dto.Response.AppUserDto;
 import com.pratham.bootbase.dto.Response.LoginResponseDto;
 import com.pratham.bootbase.entity.AppUser;
+import com.pratham.bootbase.entity.Session;
 import com.pratham.bootbase.exception.BadRequestException;
+import com.pratham.bootbase.exception.SessionNotFoundException;
 import com.pratham.bootbase.repository.AppUserRepository;
+import com.pratham.bootbase.repository.SessionRepository;
+import com.pratham.bootbase.utils.SecurityUtil;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +34,8 @@ public class AuthService {
     private final JwtService jwtService;
     private final AppUserService appUserService;
     private final SessionService sessionService;
+    private final SessionRepository sessionRepository;
+
 
     public AppUserDto signup(SignupDto signupDto){
         if(appUserRepository.existsByEmail(signupDto.getEmail())){
@@ -63,6 +73,9 @@ public class AuthService {
 
     public LoginResponseDto refresh(String refreshToken) {
         //get the userId from refresh token
+        if(refreshToken == null){
+            throw new JwtException("user is not logged in");
+        }
         Long userId = jwtService.getUserIdFromRefreshToken(refreshToken);
 
         //validate whether a session exists for this userId and refresh token
@@ -77,5 +90,11 @@ public class AuthService {
         //send the response
         return LoginResponseDto.builder()
                 .accessToken(accessToken).refreshToken(refreshToken).build();
+    }
+
+    @Transactional
+    public void logout(String refreshToken){
+        Long userId = jwtService.getUserIdFromRefreshToken(refreshToken);
+        sessionRepository.deleteByAppUserIdAndRefreshToken(userId,refreshToken);
     }
 }
