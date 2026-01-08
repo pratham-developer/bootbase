@@ -18,4 +18,5 @@ public class AccessTokenClaims {
     private String email;
     private Long expirationTime;
     private List<String> roles;
+    private String subscription;
 }

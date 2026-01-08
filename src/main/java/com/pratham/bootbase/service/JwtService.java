@@ -47,6 +47,7 @@ public class JwtService {
                 .name(claims.get("name",String.class))
                 .email(claims.get("email",String.class))
                 .roles(claims.get("roles", List.class))
+                .subscription(claims.get("subscription",String.class))
                 .expirationTime(claims.getExpiration().getTime())
                 .build();
     }
@@ -68,6 +69,7 @@ public class JwtService {
                 .claim("name",authUser.getName())
                 .claim("email",authUser.getEmail())
                 .claim("roles",authUser.getRoles().stream().map(role -> role.name()).collect(Collectors.toList()))
+                .claim("subscription",authUser.getSubscription().name())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + accessExpiry))
                 .signWith(getAccessSecretKey())

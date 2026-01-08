@@ -3,6 +3,7 @@ package com.pratham.bootbase.filters;
 import com.pratham.bootbase.dto.AccessTokenClaims;
 import com.pratham.bootbase.dto.AuthenticatedUser;
 import com.pratham.bootbase.entity.enums.Role;
+import com.pratham.bootbase.entity.enums.Subscription;
 import com.pratham.bootbase.exception.SessionNotFoundException;
 import com.pratham.bootbase.service.JwtService;
 import com.pratham.bootbase.service.TokenBlacklistService;
@@ -58,7 +59,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 AuthenticatedUser authenticatedUser = AuthenticatedUser
                         .builder().id(claims.getId()).name(claims.getName())
-                        .email(claims.getEmail()).roles(roles).build();
+                        .email(claims.getEmail()).roles(roles).subscription(Subscription.valueOf(claims.getSubscription()))
+                        .build();
 
 
                 UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =

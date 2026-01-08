@@ -2,10 +2,13 @@ package com.pratham.bootbase.entity;
 
 
 import com.pratham.bootbase.entity.enums.Role;
+import com.pratham.bootbase.entity.enums.Subscription;
 import com.pratham.bootbase.utils.PermissionMapping;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Check;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
@@ -17,6 +20,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Check(name = "session_limit_constraint", constraints = "session_limit>0 AND session_limit<=5")
 public class AppUser implements UserDetails {
 
     @Id
@@ -35,10 +39,21 @@ public class AppUser implements UserDetails {
     @ElementCollection(fetch = FetchType.EAGER)
     private Set<Role> roles;
 
+    @Builder.Default
+    @Column(name = "session_limit", nullable = false)
+    private Integer sessionLimit = 1;
+
+    @Builder.Default
+    @Enumerated(value = EnumType.STRING)
+    @Column(nullable = false)
+    private Subscription subscription = Subscription.FREE;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         //use permission mapping to get all the authorities
-        return PermissionMapping.getAuthorities(roles);
+        Set<SimpleGrantedAuthority> authorities =  PermissionMapping.getAuthorities(roles);
+        authorities.add(new SimpleGrantedAuthority(subscription.name()));
+        return authorities;
     }
 
     @Override

@@ -16,13 +16,13 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class SessionService {
-    private final int allowedSessions = 2;
     private final SessionRepository sessionRepository;
     private final JwtService jwtService;
     private final EntityManager entityManager;
 
     @Transactional
     public void createSession(AppUser appUser, String refreshToken){
+        int allowedSessions = appUser.getSessionLimit();
         List<Session> existingSessions = sessionRepository.findByAppUserOrderByLastUsedAtAsc(appUser);
         if(existingSessions.size()==allowedSessions){
             Session toDelete = existingSessions.getFirst();
