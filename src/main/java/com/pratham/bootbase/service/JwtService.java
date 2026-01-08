@@ -75,8 +75,12 @@ public class JwtService {
     }
 
     public String generateRefreshToken(AppUser authUser) {
+        return refreshTokenBuilder(authUser.getId());
+    }
+
+    public String refreshTokenBuilder(Long userId){
         return Jwts.builder()
-                .subject(String.valueOf(authUser.getId()))
+                .subject(String.valueOf(userId))
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + refreshExpiry))
                 .signWith(getRefreshSecretKey())

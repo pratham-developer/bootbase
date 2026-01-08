@@ -76,7 +76,7 @@ public class AuthService {
         Long userId = jwtService.getUserIdFromRefreshToken(refreshToken);
 
         //validate whether a session exists for this userId and refresh token
-        sessionService.validateAndUpdateSession(userId, refreshToken);
+        String newRefreshToken = sessionService.validateAndUpdateSession(userId, refreshToken);
 
         //get the authenticated user
         AppUser appUser = appUserService.loadUserById(userId);
@@ -86,7 +86,7 @@ public class AuthService {
 
         //send the response
         return LoginResponseDto.builder()
-                .accessToken(accessToken).refreshToken(refreshToken).build();
+                .accessToken(accessToken).refreshToken(newRefreshToken).build();
     }
 
     @Transactional

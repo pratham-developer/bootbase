@@ -4,6 +4,8 @@ import com.pratham.bootbase.entity.AppUser;
 import com.pratham.bootbase.entity.Session;
 import com.pratham.bootbase.exception.SessionNotFoundException;
 import com.pratham.bootbase.repository.SessionRepository;
+import jakarta.persistence.EntityManager;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.web.authentication.session.SessionAuthenticationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,13 +14,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class SessionService {
     private final int allowedSessions = 2;
     private final SessionRepository sessionRepository;
-
-    public SessionService(SessionRepository sessionRepository) {
-        this.sessionRepository = sessionRepository;
-    }
+    private final JwtService jwtService;
+    private final EntityManager entityManager;
 
     @Transactional
     public void createSession(AppUser appUser, String refreshToken){
@@ -36,13 +37,15 @@ public class SessionService {
     }
 
     @Transactional
-    public void validateAndUpdateSession(Long userId, String refreshToken){
+    public String validateAndUpdateSession(Long userId, String refreshToken){
         Session session = sessionRepository.findByAppUserIdAndRefreshToken(userId,refreshToken)
                 .orElseThrow(
                         ()->new SessionNotFoundException("No Existing Session Found. Please login.")
                 );
-
+        String newRefreshToken = jwtService.refreshTokenBuilder(userId);
         session.setLastUsedAt(LocalDateTime.now());
+        session.setRefreshToken(newRefreshToken);
         sessionRepository.save(session);
+        return newRefreshToken;
     }
 }
